@@ -5,13 +5,13 @@
 %%%%
 
 cine_folder = 'Z:\Encapsulation\Cell-Encapsulation-Videos-DA\3um';
-cine_file = '15.56uL-0.03vv-3um-H362A2-all3-40x.cine';
+cine_file = '15.56uL-0.055vv-3um-H364A1-40x-3.cine';
 
 
-window_height = [5 11]; % vector of pixels at which to read data
-window_length = 128; % number of pixles 
-window_origin = 0; % offset 
-frames = [1 4000000]; % range of frames
+window_height = [13 20]; % vector of pixels at which to read data
+window_length = 1000; % number of pixles 
+window_origin = 100; % offset 
+frames = [1 204666]; % range of frames
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 importfile('LinLUT.mat'); %a conversion between packed 10bit data to real 10bit data
@@ -31,7 +31,7 @@ sample = zeros(length(window_height),window_length,length(1:skip_frames:fr),2);
 
 % load data
 for i = 1:2
-    sample(:,:,:,i) = cineRead2(cine_folder,cine_file,[i*15:skip_frames:fr],info,LinLUT,...
+    sample(:,:,:,i) = cineRead2(cine_folder,cine_file,[i:skip_frames:fr],info,LinLUT,...
         window_height,window_length,window_origin);
 end
 
@@ -49,7 +49,7 @@ figure
 histogram(allpr)
 
 % set peak features for rest of analysis
-prom = 350;
+prom = 600;
 pdist = 4;
 pwidth = 10;
 toc
