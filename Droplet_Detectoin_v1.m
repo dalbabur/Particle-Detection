@@ -4,14 +4,14 @@
 % Diego Alba 3/12/2019
 %%%%
 
-cine_folder = 'Z:\Encapsulation\Cell-Encapsulation-Videos-DA\3um';
-cine_file = '15.56uL-0.055vv-3um-H364A1-40x-3.cine';
+cine_folder = 'A:\Encapsulation\Cell-Encapsulation-Videos-DA\cells\wide channel';
+cine_file = '33.7mil_cellpml-22.5ulpmin-20x-2.cine';
 
 
-window_height = [13 20]; % vector of pixels at which to read data
-window_length = 1000; % number of pixles 
-window_origin = 100; % offset 
-frames = [1  204666]; % range of frames
+window_height = [26 38]; % vector of pixels at which to read data
+window_length = 1280; % number of pixles 
+window_origin = 0; % offset 
+frames = [9  576528]; % range of frames
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 importfile('LinLUT.mat'); %a conversion between packed 10bit data to real 10bit data
@@ -34,12 +34,13 @@ for i = 1:2
     sample(:,:,:,i) = cineRead2(cine_folder,cine_file,[i:skip_frames:fr],info,LinLUT,...
         window_height,window_length,window_origin);
 end
+sample = (sample + min(-sample(:)));    
 
 % use findpeaks on data
 allpr = [];
 for p = 1:length(sample(1,1,:,1))
     for k = 1:length(sample(:,1,1,1))
-        [~,~,~,pr] = findpeaks(-(sample(k,:,p,1))); % only care about prominance first
+        [~,~,~,pr] = findpeaks((sample(k,:,p,1))); % only care about prominance first
         allpr = [allpr pr];
     end
 end
@@ -47,31 +48,47 @@ end
 % plot prominance
 figure
 histogram(allpr)
-
-% set peak features for rest of analysis
-prom = 600;
-pdist = 4;
-pwidth = 10;
 toc
 
+%% set peak features for rest of analysis
+tic
+prom = 750;
+pdist = 4;
+minpwidth = 0;
+maxpwidth = 7;
+toc
 
+%% check peak features for rest of analysis
+
+cine_frame = 288268;
+check = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
+        window_height,window_length,window_origin);
+check = (check + min(-check(:)));    
+findpeaks((check(1,:)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth','Annotate','extents')
+
+
+% check2 = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
+%         1:64,window_length,window_origin);
+% 
+% imagesc(check2)
+%     
 %%
 % Calculate particle velocity 
 
 tic
-allt = NaN(50,length(sample(1,1,:,1)),2);
+allt = NaN(80,length(sample(1,1,:,1)),2);
 e = 0;
 for p = 1:length(sample(1,1,:,1))
     locss = [];
     for k = 1:length(sample(:,1,1,1))
-        [~,t1] = findpeaks(-(sample(k,:,p,1)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MaxPeakWidth',pwidth);
-        [~,t2] = findpeaks(-(sample(k,:,p,2)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MaxPeakWidth',pwidth);
+        [~,t1] = findpeaks((sample(k,:,p,1)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth);
+        [~,t2] = findpeaks((sample(k,:,p,2)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth);
         for i = 1:length(t2)
             dummy = t2(i) - t1;
             dummy = min(dummy(dummy>0));
             if ~isempty(dummy)
                 if dummy > 50, allt(i,p,k) = NaN; e=e+1;
-                else, allt(i,p,k) = dummy; 
+                else, allt(i,p,k) = dummy;  
                 end
             else, e=e+1; 
             end
@@ -87,7 +104,7 @@ std_vel = nanstd(allt(:))
 
 % plot velocity distribution
 figure
-histogram(floor(allt(~isnan(allt(:)))),'BinMethod','integer','Normalization','probability')
+histogram((allt(~isnan(allt(:)))),'BinMethod','integer','Normalization','probability')
 xlabel('Particle Velocity (px/frame)')
 ylabel(['Probability, n = ',num2str(n)])
 title('Particle Velocity Distribution')
@@ -108,6 +125,7 @@ tic
 data = cineRead2(cine_folder,cine_file,xfr,info,LinLUT,...
     window_height,window_length,window_origin);
 toc
+data = (data + min(-data(:)));    
 
 
 %%
@@ -115,7 +133,7 @@ toc
 
 tic
 npeaks = zeros(length(data(1,1,:)),length(data(:,1,1)));
-allws = NaN(length(data(1,1,:)),length(data(:,1,1)),50);
+allws = NaN(length(data(1,1,:)),length(data(:,1,1)),80);
 l = [];
 test = zeros(window_length,length(data(1,1,:)));
 
@@ -123,7 +141,7 @@ u = 0;
 for p = 1:length(data(1,1,:))
     locss = [];
     for k = 1:length(data(:,1,1))
-        [~,locs,ws] = findpeaks(-(data(k,:,p)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MaxPeakWidth',pwidth);
+        [~,locs,ws] = findpeaks((data(k,:,p)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth');
         npeaks(p,k) = length(locs);
         allws(p,k,1:length(ws)) = ws;
         locss = [locss locs];
@@ -168,7 +186,7 @@ ylabel(['Probability, n = ',num2str(length(d))])
 title('Particle Distance Distribution')
 
 % calculate and plot train size
-dmax = 20;
+dmax = 10*5;
 train = find(d>dmax);
 train = train - circshift(train,1);
 train(1)=d(1);
@@ -202,7 +220,7 @@ xlswrite('analyzed.xlsx',window_length,'Sheet1',['J',num2str(row)])
 xlswrite('analyzed.xlsx',{num2str(frames)},'Sheet1',['K',num2str(row)])
 xlswrite('analyzed.xlsx',prom,'Sheet1',['L',num2str(row)])
 xlswrite('analyzed.xlsx',pdist,'Sheet1',['M',num2str(row)])
-xlswrite('analyzed.xlsx',pwidth,'Sheet1',['N',num2str(row)])
+xlswrite('analyzed.xlsx',maxpwidth,'Sheet1',['N',num2str(row)])
 xlswrite('analyzed.xlsx',mean_vel,'Sheet1',['O',num2str(row)])
 xlswrite('analyzed.xlsx',std_vel,'Sheet1',['P',num2str(row)])
 xlswrite('analyzed.xlsx',n,'Sheet1',['Q',num2str(row)])
