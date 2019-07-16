@@ -4,14 +4,24 @@
 % Diego Alba 3/12/2019
 %%%%
 
-cine_folder = 'A:\Encapsulation\Cell-Encapsulation-Videos-DA\cells\wide channel';
-cine_file = '33.7mil_cellpml-22.5ulpmin-20x-2.cine';
+cine_folder = 'J:\Encapsulation\Cell-Encapsulation-Videos-DA\3um';
+cine_file = '15.56uL-0.045vv-3um-H363C-all4-40x.cine';
 
 
-window_height = [26 38]; % vector of pixels at which to read data
-window_length = 1280; % number of pixles 
+window_height = [4 12]; % vector of pixels at which to read data
+window_length = 128; % number of pixles 
 window_origin = 0; % offset 
-frames = [9  576528]; % range of frames
+frames = [1  204666]; % range of frames
+cells = 0; % cells or beads
+
+% from previous analysis
+mean_vel = []; %18.57135909; % if known, else leave as [];
+% std_vel = 9.003709145;
+% n = 22618;
+% prom = 150;
+% pdist = 4;
+% minpwidth = 0;
+% maxpwidth = 7;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 importfile('LinLUT.mat'); %a conversion between packed 10bit data to real 10bit data
@@ -22,7 +32,7 @@ info = cineInfo(cine_folder,cine_file);
 %%
 % Get sample frames to calculate particle velocity
 % Also check peak prominance (important for particle detection)
-
+if isempty(mean_vel)
 tic
 fr = floor(info.NumFrames);
 skip_frames = floor(fr/1000);
@@ -30,11 +40,11 @@ skip_frames = floor(fr/1000);
 sample = zeros(length(window_height),window_length,length(1:skip_frames:fr),2);
 
 % load data
-for i = 1:2
+for i = 1:2 % if FPS too high, mean_vel is going to be wrong. Compare i*15 rather that i+1
     sample(:,:,:,i) = cineRead2(cine_folder,cine_file,[i:skip_frames:fr],info,LinLUT,...
         window_height,window_length,window_origin);
-end
-sample = (sample + min(-sample(:)));    
+end  
+if cells, sample = (sample + min(-sample(:))); else sample = -sample; end
 
 % use findpeaks on data
 allpr = [];
@@ -49,37 +59,39 @@ end
 figure
 histogram(allpr)
 toc
-
+end
 %% set peak features for rest of analysis
 tic
-prom = 750;
+prom = 350;
 pdist = 4;
 minpwidth = 0;
-maxpwidth = 7;
+maxpwidth = 10;
 toc
 
 %% check peak features for rest of analysis
 
-cine_frame = 288268;
+cine_frame = 400;
 check = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
         window_height,window_length,window_origin);
-check = (check + min(-check(:)));    
+if cells, check = (check + min(-check(:))); else, check = -check; end  
+figure
+hold on
 findpeaks((check(1,:)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth','Annotate','extents')
+findpeaks((check(2,:)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth','Annotate','extents')
 
-
-% check2 = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
-%         1:64,window_length,window_origin);
-% 
-% imagesc(check2)
-%     
+figure
+check2 = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
+        1:info.Height,window_length,window_origin);
+imagesc(check2)
+     
 %%
 % Calculate particle velocity 
-
+if isempty(mean_vel)
 tic
 allt = NaN(80,length(sample(1,1,:,1)),2);
 e = 0;
 for p = 1:length(sample(1,1,:,1))
-    locss = [];
+    xlocs = [];
     for k = 1:length(sample(:,1,1,1))
         [~,t1] = findpeaks((sample(k,:,p,1)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth);
         [~,t2] = findpeaks((sample(k,:,p,2)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth);
@@ -113,7 +125,7 @@ title('Particle Velocity Distribution')
 
 toc
 
-
+end
 %%
 % now that velocity is known, calculate how many frames it would take for a
 % particle to move an entire window length. skip that many frames when
@@ -125,7 +137,7 @@ tic
 data = cineRead2(cine_folder,cine_file,xfr,info,LinLUT,...
     window_height,window_length,window_origin);
 toc
-data = (data + min(-data(:)));    
+if cells, data = (data + min(-data(:))); else data = -data; end
 
 
 %%
@@ -134,30 +146,50 @@ data = (data + min(-data(:)));
 tic
 npeaks = zeros(length(data(1,1,:)),length(data(:,1,1)));
 allws = NaN(length(data(1,1,:)),length(data(:,1,1)),80);
-l = [];
+all_x = [];
+all_y = [];
 test = zeros(window_length,length(data(1,1,:)));
 
 u = 0;
 for p = 1:length(data(1,1,:))
-    locss = [];
+    xlocs = [];
+    ylocs = [];
     for k = 1:length(data(:,1,1))
         [~,locs,ws] = findpeaks((data(k,:,p)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth');
         npeaks(p,k) = length(locs);
         allws(p,k,1:length(ws)) = ws;
-        locss = [locss locs];
+        xlocs = [xlocs locs];
+        ylocs = [ylocs window_height(k)*ones(1,length(xlocs))];
     end
-    test(locss,p) = 1;
-    locss = sort(locss)+length(data(1,:,1))*(p-1);
-    if length(locss) ~= length(unique(locss)), u = u+1; end
-    l = [l locss];
+    test(xlocs,p) = 1;
+    [xlocs, idx] = sort(xlocs);
+    ylocs = ylocs(idx);
+    xlocs = xlocs+length(data(1,:,1))*(p-1);
+    if length(xlocs) ~= length(unique(xlocs)), u = u+1; end
+    all_x = [all_x xlocs];
+    all_y = [all_y ylocs];
 end
 
 % to find distance between particles, subtract overall positions
-clocs = circshift(l,1);
-d = l(2:end)-clocs(2:end);
+clocs = circshift(all_x,1);
+old_d = all_x(2:end)-clocs(2:end);
+
+d = zeros(1,length(all_x)-1);
+d_type = zeros(1,length(all_x)-1);
+for i = 1:(length(all_x)-1)
+    d(i) = norm([all_x(i+1) all_y(i+1)] - [all_x(i) all_y(i)]);
+    if all_y(i+1) == all_y(i), d_type(i) = 1; end
+end
+d_type = logical(d_type);
 
 % bin the data
-h = (histcounts(d,'BinMethod','integers','Normalization','probability'));
+[old_h, old_e] = (histcounts(old_d,'BinMethod','integers','Normalization','probability'));
+[h,e1] = (histcounts(d,'BinMethod','integers','Normalization','count'));
+[h1,e2] = (histcounts(d(d_type),'BinMethod','integers','Normalization','count'));
+[h0,e3] = (histcounts(d(~d_type),'BinMethod','integers','Normalization','count'));
+h1 = [zeros(1,e1(1)-.5) h1];
+h0 = [zeros(1,e1(1)-.5) zeros(1,e3(1)-e2(1)) h0];
+h = h./length(d); h1 = h1./length(d); h0 = h0./length(d);
 toc
 
 % plot location density for each frame
@@ -177,13 +209,15 @@ title('Particle Size Distribution')
 
 % plot distance histogram
 figure
-plot(h)
+hold on
+plot(old_h(2:end),'k--'),plot(h1),plot(h0)
 xlim([0 length(h)])
 xticks(linspace(0,length(h),25))
 % xticklabels(floor(linspace(0,length(h),25)/1.66))
 xlabel('Particle Distance (px)')
 ylabel(['Probability, n = ',num2str(length(d))])
 title('Particle Distance Distribution')
+
 
 % calculate and plot train size
 dmax = 10*5;
@@ -200,7 +234,7 @@ title(['Particle Train Size Distribution, dmax = ',num2str(dmax/1.66),' um'])
 
 %%
 % save data and process to excel file
-
+tic
 [~,dummy] = xlsread('analyzed.xlsx');
 [row, ~] = size(dummy);
 row = row+1;
@@ -224,6 +258,12 @@ xlswrite('analyzed.xlsx',maxpwidth,'Sheet1',['N',num2str(row)])
 xlswrite('analyzed.xlsx',mean_vel,'Sheet1',['O',num2str(row)])
 xlswrite('analyzed.xlsx',std_vel,'Sheet1',['P',num2str(row)])
 xlswrite('analyzed.xlsx',n,'Sheet1',['Q',num2str(row)])
-xlswrite('analyzed.xlsx',l(:),'Sheet2',[char(row+63),'1'])
-xlswrite('analyzed.xlsx',d(:),'Sheet3',[char(row+63),'1'])
-xlswrite('analyzed.xlsx',sum(test')','Sheet4',[char(row+63),'1'])
+
+xlswrite('analyzed.xlsx',sum(test,2),'test',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',all_x(:),'all_x',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',all_y(:),'all_y',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',d(:),'d',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',d_type(:),'d_type',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',h1(:),'h1',[char(row+63),'1'])
+xlswrite('analyzed.xlsx',h0(:),'h0',[char(row+63),'1'])
+toc
