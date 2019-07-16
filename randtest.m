@@ -22,6 +22,12 @@ for j = [9,10,11,13,14,12]
     randhist(j,1:length(dummy)) = dummy;
 end
 
+d1 = d_type;
+d1(isnan(d1)) = 0;
+d0 = -(d_type-1);
+d0(isnan(d0)) = 0;
+d1 = logical(d1); d0 = logical(d0);
+
 %%
 dj = dist(:,8:10);
 [dummy,e] = (histcounts(dj(fnan(:,8:10)),'BinMethod','integers','Normalization','count'));
