@@ -30,6 +30,13 @@ d1 = logical(d1); d0 = logical(d0);
 
 %%
 dj = dist(:,8:10);
+all_dj{2} = dj(fnan(:,8:10));
+dj = dist(:,12:13);
+all_dj{1} = dj(fnan(:,12:13));
+dj = dist(:,11);
+all_dj{3} = dj(fnan(:,11));
+
+dj = dist(:,8:10);
 [dummy,e] = (histcounts(dj(fnan(:,8:10)),'BinMethod','integers','Normalization','count'));
 [dummy1,e1] = (histcounts(dj(d1(:,1:3)),'BinMethod','integers','Normalization','count'));
 [dummy0,e0] = (histcounts(dj(d0(:,1:3)),'BinMethod','integers','Normalization','count'));
@@ -85,19 +92,35 @@ plot(linspace(0,200/(3/pxconv(4)),200),normed(1,1:200))
 plot(linspace(0,200/(10/pxconv(8)),200),normed(7,1:200))
 plot([0 200],[1 1],'k--')
 xlim([0 12])
+ylim([0 9])
 xticks(1:15)
-legend('0.055 %v/v - 3um beads, 10um channel','0.086 %v/v - 3um beads, 10um channel','0.45 %v/v - 10um cells, 40um channel',' random distribution')
+legend(['0.055 %v/v - 3um beads, 10um channel' newline 'n = ' num2str(length(all_dj{2}))],...
+        ['0.086 %v/v - 3um beads, 10um channel' newline 'n = ' num2str(length(all_dj{1}))],...
+        ['0.45 %v/v - 10um cells, 40um channel' newline 'n = ' num2str(length(all_dj{3}))])
 xlabel('Particle Distance (# diameters)')
 ylabel('Normalization Factor')
 
 %%
 % calculate and plot train size
-dmax = 5*5;
-train = find(randdist(9,:)>dmax);
-train = train - circshift(train,1);
-train(1)=d(1);
+var = [5 5 7];
+
+for i = 1:3
+    dmax = 5*var(i);
+    train = find(all_dj{i}>dmax);
+    train = train - circshift(train,1);
+    train(1)=all_dj{i}(1);
+    dummy = histcounts(train,'BinMethod','integer','Normalization','probability');
+    n(i) = length(train);
+    trainhist(i,1:length(dummy)) = dummy;
+end
+
+%%
+trainbar = trainhist;
+trainbar(:,1) = 0;
 figure
-histogram(train,'BinMethod','integer','Normalization','probability')
-xlabel('Particle Train Size (# beads)')
-ylabel(['Probability, n = ',num2str(length(train))])
-title(['Particle Train Size Distribution, dmax = ',num2str(dmax/1.66),' um'])
+bar(trainbar',1.1)
+xlabel('Particle Train Size (# particles)')
+xlim([0 30])
+ylabel('Probability')
+title('Particle Train Size Distribution, dmax = 5 diameters')
+legend(['0.055 %v/v - 3um beads, 10um channel' newline ' n = ',num2str(n(2))],['0.085 %v/v - 3um beads, 10um channel' newline 'n = ',num2str(n(1))],['0.45 %v/v - 10um cells, 40um channel' newline 'n = ',num2str(n(3))])
