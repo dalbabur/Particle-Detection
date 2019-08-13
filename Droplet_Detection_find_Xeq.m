@@ -90,7 +90,7 @@ toc
 tic
 prom = 900;
 pdist = 4;
-maxpwidth = 15;
+maxpwidth = 9;
 toc
 
 %%
@@ -101,13 +101,6 @@ flag = zeros(frames(2),n_locs);
 for p = frames(1):frames(2)
     for k = 1:n_locs
         [~,locs,w,pr] = findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
-%         remove = zeros(1,length(w));
-%         for i = 1:length(w)
-%             if w(i) > 0.7*mean(wall(:,2)-wall(:,1))
-%                 remove(i) = 1;
-%             end
-%         end
-%         locs(logical(remove)) = [];
         all_locs(p,k,1:length(locs)) = locs;
         if ~isempty(locs)
             flag(p,k) = 1;
@@ -115,13 +108,6 @@ for p = frames(1):frames(2)
     end
 end
 toc
-[idx_p,idx_k] = find(flag);
-for i = 1:length(idx_k)
-    p = idx_p(i);
-    k = idx_k(i);
-    figure
-    findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
-end
 
 if sum(sum((all_locs(:,:,1)))) == sum((all_locs(:)))
     disp('detected a maxiimum of 1 particle per region, all good')
@@ -131,23 +117,40 @@ end
 for k = 1:n_locs
     all_locs(:,k,:) = all_locs(:,k,:)+wall(k,1);
 end
+
 figure
 subplot(1,2,1)
 imagesc(all_locs(:,:,1))
 subplot(1,2,2)
 histogram(all_locs(all_locs>0))
 
+[idx_p,idx_k] = find(flag);
+for i = 1:length(idx_k)
+    p = idx_p(i);
+    k = idx_k(i);
+    figure
+    findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+    title(i)
+end
+
+delete = input('enter and array of indices to delete (in the form: [1, 17,25]): ');
+idx_p(delete) = [];
+idx_k(delete) = [];
+
+particles = sub2ind(size(all_locs),idx_p,idx_k);
+
 %%
 % calculate distance from the wall
-dist = all_locs;
-all_locs(all_locs==0) = NaN;
-for k = 1:n_locs
-    dist(:,k,:) = min(all_locs(:,k,:)-wall(k,1) ,wall(k,2) - all_locs(:,k,:));
-end
+dist = all_locs(particles);
+dist= min(dist-wall(idx_k,1),wall(idx_k,2)-dist);
+
+dummy = zeros(frames(2),n_locs,5);
+dummy(particles) = dist;
 
 figure
 subplot(1,2,1)
-imagesc(dist(:,:,1))
+imagesc(dummy(:,:,1))
 subplot(1,2,2)
 histogram(dist)
+all_locs(particles)
 
