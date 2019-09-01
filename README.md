@@ -1,1 +1,9 @@
-# DropletDetection
+# Particle Detection within Channel
+
+The aim of this repo is to quickly find and analyze the position of spherical particles (beads, cells, droplets...) in microfluidic channels. Because of the nature of the experiments (high Re, high FPS, high resolution), the traditional [*cineRead.m*](https://github.com/DIEGOA363/Droplet-Detection/blob/master/extra/lib_asym/cineRead.m) and analysis scripts would take too long. The data for this project is located in Drobo.
+
+To speed up the process, the raw .cine data is read directly from Drobo, using [*cineRead2.m*](https://github.com/DIEGOA363/Droplet-Detection/blob/master/utils/cineRead2.m), which reads only a specified region of each movie frame. The analysis is based on the assumption that the particles **are focused!** If the particles are not focused, or the channel is not straigh with respect to the field of view, it won't work.
+
+To find the particles we use the MATLAB function [*findpeaks.m*](https://www.mathworks.com/help/signal/ref/findpeaks.html). One should be familiar with its inner workings before trying to analyzed any data, as the results are completly determined by the input parameters. The detection and analysis is carried out in [*Droplet_Detection_fixed_Xeq.m*](https://github.com/DIEGOA363/Droplet-Detection/blob/master/Droplet_Detection_fixed_Xeq.m). There's also the opposite analysis (find the "Xeq" at specific channel position) in [*Droplet_Detection_find_Xeq.m*](https://github.com/DIEGOA363/Droplet-Detection/blob/master/Droplet_Detection_find_Xeq.m). All the analysis parameters and results are saved to [*analyzed.xlsx*](https://github.com/DIEGOA363/Droplet-Detection/blob/master/analyzed.xlsx).
+
+Present in [*utils*](https://github.com/DIEGOA363/Droplet-Detection/tree/master/utils) there's also scripts that will compare the results to random distributions of particles, and in [*extras*](https://github.com/DIEGOA363/Droplet-Detection/tree/master/extras) old functions, and essential files like LinLUT.mat and importfile.m
