@@ -75,6 +75,8 @@ end
 % plot prominance
 figure
 histogram(allpr)
+title('Histogram of Peak Prominance (low prominance ~ noise)')
+xlabel('Prominance')
 toc
 end
 
@@ -220,10 +222,16 @@ toc
 % plot location density for each frame
 figure
 imagesc(test)
+title('Where Have Particles Been Detected - should be random')
+ylabel('Channel Length')
+xlabel('Frame Number')
 
 % plot total particle count per pixel
 figure
 plot(sum(test'))
+ylabel('Number of Detections')
+xlabel('Channel Length')
+title('Where Have Particles Been Detected, Collapsed - should be uniform')
 
 % plot histogram for peak width ~ particle size
 figure
