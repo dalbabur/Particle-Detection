@@ -1,3 +1,9 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
+%
+% Diego Alba 3/12/2019
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [idata] = cineRead2(cine_folder, cine_file,frameNums,info,LinLUT,...
     window_height,window_length,window_origin)
 %
