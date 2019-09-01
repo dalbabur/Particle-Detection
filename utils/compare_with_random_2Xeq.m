@@ -1,3 +1,9 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
+%
+% Diego Alba 3/12/2019
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 dist = xlsread('analyzed.xlsx','d');
 d_type = xlsread('analyzed.xlsx','d_type');
 all_y = xlsread('analyzed.xlsx','all_y');
