@@ -1,8 +1,8 @@
-%%
-% Droplet Detection
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
 %
 % Diego Alba 3/12/2019
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 cine_folder = 'H:\Encapsulation\Cell-Encapsulation-Videos-DA\cells\wide channel';
 cine_file = '33.7mil_cellpml-22.5ulpmin-20x-2.cine';
