@@ -1,16 +1,21 @@
-%%
-% Droplet Detection
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
 %
 % Diego Alba 3/12/2019
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CHANGE THESE PARAMETERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 cine_folder = 'T:\Encapsulation\Cell-Encapsulation-Videos-DA\cells\wide channel';
 cine_file = '24mil_cellspml-30ulpmin-20x.cine';
 
-
 window_height = [23 38]; % vector of pixels at which to read data
-window_length = 640; % number of pixles 
-window_origin = 0; % offset 
+window_length = 640; % number of pixles
+window_origin = 0; % offset
 frames = [1  576538]; % range of frames
 cells = 1; % cells or beads
 avg = {};
@@ -43,7 +48,7 @@ sample = zeros(length(window_height),window_length,length(1:skip_frames:fr),2);
 for i = 1:2 % if FPS too high, mean_vel is going to be wrong. Compare i*15 rather that i+1
     sample(:,:,:,i) = cineRead2(cine_folder,cine_file,[i:skip_frames:fr],info,LinLUT,...
         window_height,window_length,window_origin);
-end  
+end
 if cells, sample = (sample + min(-sample(:))); else sample = -sample; end
 
 if ~isempty(avg)
@@ -72,7 +77,11 @@ figure
 histogram(allpr)
 toc
 end
+
 %% set peak features for rest of analysis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CHANGE THESE PARAMETERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 prom = 450;
 pdist = 4;
@@ -85,7 +94,7 @@ toc
 cine_frame = 400;
 check = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
         window_height,window_length,window_origin);
-if cells, check = (check + min(-check(:))); else, check = -check; end  
+if cells, check = (check + min(-check(:))); else, check = -check; end
 figure
 hold on
 findpeaks((check(1,:)),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxpeakWidth',maxpwidth','Annotate','extents')
@@ -95,13 +104,13 @@ figure
 check2 = cineRead2(cine_folder,cine_file,cine_frame,info,LinLUT,...
         1:info.Height,window_length,window_origin);
 imagesc(check2)
-hold on 
+hold on
 plot([0,640],[window_height(1),window_height(1)])
 plot([0,640],[window_height(2),window_height(2)])
 
-     
+
 %%
-% Calculate particle velocity 
+% Calculate particle velocity
 if isempty(mean_vel)
 tic
 allt = NaN(80,length(sample2(1,1,:,1)),2);
@@ -116,9 +125,9 @@ for p = 1:length(sample2(1,1,:,1))
             dummy = min(dummy(dummy>0));
             if ~isempty(dummy)
                 if dummy > 50, allt(i,p,k) = NaN; e=e+1;
-                else, allt(i,p,k) = dummy;  
+                else, allt(i,p,k) = dummy;
                 end
-            else, e=e+1; 
+            else, e=e+1;
             end
         end
     end
