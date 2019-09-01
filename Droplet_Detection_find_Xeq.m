@@ -1,8 +1,8 @@
-%%
-% Droplet Detection
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
 %
 % Diego Alba 3/12/2019
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 cine_folder = 'A:\DACS Cell Sorting with Prof. Sangwon Kim\Images From Cell Sorting KO\Alignment videos\2019.07.31';
 cine_file = 'Re=8 vid 1 part1.cine';
