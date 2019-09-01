@@ -1,3 +1,9 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Droplet/Cell/Bead Detection
+%
+% Diego Alba 3/12/2019
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [h,window_length,skips] = consistency_test(cine_folder,cine_file,frames,info,LinLUT,...
     window_height,window_length,window_origin,skip,pxpf,prom)
 
