@@ -4,18 +4,16 @@
 % Diego Alba 3/12/2019
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cine_folder = 'C:\Users\Srivathsan Kalyan\OneDrive - Johns Hopkins University\WT Focusing Vids';
-cine_file = 'Re=10_T1 part 1.cine';
-
-
+cine_folder = 'E:\Yuelin Particle Focusing Videos and Analysis Code\KO Alignment Vids';
+cine_file = 'Re=8 vid 1 part3.cine';
 window_height = 1:64; % vector of pixels at which to read data
 window_length = 1280; % number of pixles 
 window_origin = 0; % offset 
 cells = 1; % cells or beads
-radius = 0;
-box = 100;
+radius = 3; %distance around locations for finding particles
+box = 100; 
 speed_part = 20;
-n_locs = 1280;
+n_locs = 15;
 offset = 100;
 x_locs = round(linspace(window_origin+offset, window_length-offset, n_locs));
 
@@ -36,9 +34,12 @@ toc
 tic
 all_pr = [];
 minpwidth = 0;
-for p = 50
+for p = frames(1):2:frames(2)
     for k = 1:n_locs
-        [~,~,~,pr] = findpeaks(-mean(sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p),2),'MinpeakWidth',minpwidth); % only care about prominance first
+        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=mean(final_vals)';
+        [~,~,~,pr] = findpeaks(final,'MinpeakWidth',minpwidth); % only care about prominance first
         all_pr = [all_pr; pr];
     end
 end
@@ -55,9 +56,12 @@ pdist = 4;
 toc
 %%
 all_locs = NaN(frames(2),n_locs,2);
-for p = 50
+for p = 2
     for k = 1:n_locs
-        [~,locs] = findpeaks(-mean(sample(:,x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'Annotate','extent');
+        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(-final_vals)';
+        [~,locs] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'Annotate','extent');
         all_locs(p,k,1:length(locs)) = locs;
     end
 end
@@ -72,9 +76,12 @@ toc
 all_pr = [];
 all_w = [];
 maxpwidth = radius*2;
-for p = frames(1):frames(2)
+for p = frames(1):2:frames(2)
     for k = 1:n_locs
-        [~,~,w,pr] = findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2)); % only care about prominance first
+        final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(final_vals)';
+        [~,~,w,pr] = findpeaks(final); % only care about prominance first
         all_pr = [all_pr; pr];
         all_w = [all_w; w];
     end
@@ -83,16 +90,20 @@ end
 % plot prominance
 figure
 histogram(all_pr)
+hold on
+title('Prominence of Each Peak')
 figure
 histogram(all_w)
+hold on
+title('Width of Each Peak')
 toc
 
 
 %% set peak features for rest of analysis
 tic
-prom = 2300;%Change this based on previous graph output
+prom = 1800;%Change this based on previous graph output
 pdist = 4;
-maxpwidth = 9;
+maxpwidth = 20;
 toc
 
 %%
@@ -100,9 +111,12 @@ toc
 tic
 all_locs = zeros(frames(2),n_locs,5);
 flag = zeros(frames(2),n_locs);
-for p = frames(1):frames(2)
+for p = frames(1):2:frames(2)
     for k = 1:n_locs
-        [~,locs,w,pr] = findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+        final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(final_vals)';
+        [~,locs,w,pr] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
         all_locs(p,k,1:length(locs)) = locs;
         if ~isempty(locs)
             flag(p,k) = 1;
@@ -131,13 +145,16 @@ for i = 1:length(idx_k)
     p = idx_p(i);
     k = idx_k(i);
     figure
-    findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+    final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+    final_vals=final_vals';
+    final=max(final_vals)';
+    findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
     title(i)
 end
 
 delete = input('enter and array of indices to delete (in the form: [1, 17,25]): ');
-idx_p(delete) = [];
-idx_k(delete) = [];
+idx_p(delete) = []; %use this to find locations of particle for point plotting
+idx_k(delete) = []; %use this to find locations of particle for point plotting
 
 particles = sub2ind(size(all_locs),idx_p,idx_k);
 

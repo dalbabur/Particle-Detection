@@ -5,17 +5,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 cine_folder = 'C:\Users\Srivathsan Kalyan\OneDrive - Johns Hopkins University\WT Focusing Vids';
-cine_file = 'Re=10_T1 part 1.cine';
+cine_file = 'Re=10_T1 part 2.cine';
 
 
 window_height = 1:64; % vector of pixels at which to read data
 window_length = 1280; % number of pixles 
 window_origin = 0; % offset 
 cells = 1; % cells or beads
-radius = 0;
+radius = 3;
 box = 100;
 speed_part = 20;
-n_locs = 1280;
+n_locs = 15;
 offset = 100;
 x_locs = round(linspace(window_origin+offset, window_length-offset, n_locs));
 
@@ -36,28 +36,36 @@ toc
 tic
 all_pr = [];
 minpwidth = 0;
-for p = 50
+for p = frames(1):frames(2)
     for k = 1:n_locs
-        [~,~,~,pr] = findpeaks(-mean(sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p),2),'MinpeakWidth',minpwidth); % only care about prominance first
+        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(-final_vals)';
+        [~,~,~,pr] = findpeaks(final,'MinpeakWidth',minpwidth); % only care about prominance first
         all_pr = [all_pr; pr];
     end
 end
 % plot prominance
 figure
 histogram(all_pr)
+xlabel('Prominence')
+ylabel('# of Occurances')
 toc
 
 
 %% set peak 
 tic
-prom = 1200; %Only Change this in this Section
+prom = 1000; %Only Change this in this Section
 pdist = 4; 
 toc
 %%
 all_locs = NaN(frames(2),n_locs,2);
-for p = 50
+for p = 1:frames(2)
     for k = 1:n_locs
-        [~,locs] = findpeaks(-mean(sample(:,x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'Annotate','extent');
+        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=min(-final_vals)';
+        [~,locs] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'Annotate','extent');
         all_locs(p,k,1:length(locs)) = locs;
     end
 end
@@ -74,7 +82,10 @@ all_w = [];
 maxpwidth = radius*2;
 for p = frames(1):frames(2)
     for k = 1:n_locs
-        [~,~,w,pr] = findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2)); % only care about prominance first
+        final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(final_vals)';
+        [~,~,w,pr] = findpeaks(final); % only care about prominance first
         all_pr = [all_pr; pr];
         all_w = [all_w; w];
     end
@@ -83,16 +94,20 @@ end
 % plot prominance
 figure
 histogram(all_pr)
+hold on
+title('Prominence of Each Peak')
 figure
 histogram(all_w)
+hold on
+title('Width of Each Peak')
 toc
 
 
 %% set peak features for rest of analysis
 tic
-prom = 2300;%Change this based on previous graph output
+prom = 1800;%Change this based on previous graph output
 pdist = 4;
-maxpwidth = 9;
+maxpwidth = 12;
 toc
 
 %%
@@ -102,7 +117,10 @@ all_locs = zeros(frames(2),n_locs,5);
 flag = zeros(frames(2),n_locs);
 for p = frames(1):frames(2)
     for k = 1:n_locs
-        [~,locs,w,pr] = findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+        final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        final_vals=final_vals';
+        final=max(final_vals)';
+        [~,locs,w,pr] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
         all_locs(p,k,1:length(locs)) = locs;
         if ~isempty(locs)
             flag(p,k) = 1;
@@ -123,6 +141,8 @@ end
 figure
 subplot(1,2,1)
 imagesc(all_locs(:,:,1))
+xlabel('X-Locations')
+
 subplot(1,2,2)
 histogram(all_locs(all_locs>0))
 
@@ -131,7 +151,10 @@ for i = 1:length(idx_k)
     p = idx_p(i);
     k = idx_k(i);
     figure
-    findpeaks(mean(sample(wall(k,1):wall(k,2),x_locs(k)-radius:x_locs(k)+radius,p),2),'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+    final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+    final_vals=final_vals';
+    final=max(final_vals)';
+    findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
     title(i)
 end
 
@@ -155,4 +178,11 @@ imagesc(dummy(:,:,1))
 subplot(1,2,2)
 histogram(dist)
 all_locs(particles)
-
+hold on
+top_wall=mean(wall(:,1));
+bottom_wall=mean(wall(:,2));
+xlim([0;64])
+top=[top_wall,0;top_wall,15];
+bottom=[bottom_wall,0;bottom_wall,15];
+plot(top(:,1),top(:,2))
+plot(bottom(:,1),bottom(:,2))
