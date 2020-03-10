@@ -26,17 +26,18 @@ frames=[1 frames];
 %%
 % Get sample frames 
 tic
-sample = cineRead2(cine_folder,cine_file,frames(1):frames(2),info, LinLUT, window_height, window_length, window_origin); 
-
+sample = cineRead2(cine_folder,cine_file,frames(1):frames(2),info,...
+    LinLUT, window_height, window_length, window_origin);%Read the whole cine file
 if cells, sample = (sample + min(-sample(:))); else sample = -sample; end
 toc
 %% find wall
 tic
 all_pr = [];
 minpwidth = 0;
-for p = frames(1):2:frames(2)
-    for k = 1:n_locs
-        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+for p = frames(1):2:frames(2) %Read/detect the wall at every frame, could 
+    % change only to 1 frame
+    for k = 1:n_locs %Check to see how the wall varies with x location
+        final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);  %Segment the file
         final_vals=final_vals';
         final=mean(final_vals)';
         [~,~,~,pr] = findpeaks(final,'MinpeakWidth',minpwidth); % only care about prominance first
@@ -47,31 +48,36 @@ end
 figure
 histogram(all_pr)
 toc
-
-
+%This will determine the wall prominance. We expect this to vary from video
+%to video, but have seen that using ~1000-1300 is a good starting point
 %% set peak 
 tic
 prom = 1200; %Only Change this in this Section
 pdist = 4; 
 toc
 %%
-all_locs = NaN(frames(2),n_locs,2);
-for p = 2
-    for k = 1:n_locs
+all_locs = NaN(frames(2),n_locs,2); %initialize the wall vector, should all
+%get replaced
+for p = 2 %Only determine wall location using 1 frame, can change the frame
+    %number if not optimal
+    for k = 1:n_locs %Go through each location, and determine where the 
+        %wall is at that location, for distance from wall
         final_vals=sample(:,x_locs(k)-radius*2:x_locs(k)+radius*2,p);
         final_vals=final_vals';
         final=max(-final_vals)';
         [~,locs] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'Annotate','extent');
         all_locs(p,k,1:length(locs)) = locs;
+        %store locations of peaks/walls as all_locs
     end
 end
-
+%get rid of all the nans by using the squeeze functions, should be left
+%with a 2x15 array
 wall(:,:,1) = squeeze(round((nanmin(all_locs(:,:,1)))));
 wall(:,:,2) = squeeze(round((nanmax(all_locs(:,:,2)))));
 wall=squeeze(wall);
 toc
-%%
-
+%if you rerun this, you MUST clear wall
+%% Find possible locations for the particle, by using find peaks, and Thresholding peaks
 % use findpeaks on data
 all_pr = [];
 all_w = [];
@@ -79,6 +85,7 @@ maxpwidth = radius*2;
 for p = frames(1):2:frames(2)
     for k = 1:n_locs
         final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+        %only searching for peaks between the pixel coordinates of the wall
         final_vals=final_vals';
         final=max(final_vals)';
         [~,~,w,pr] = findpeaks(final); % only care about prominance first
@@ -97,15 +104,16 @@ histogram(all_w)
 hold on
 title('Width of Each Peak')
 toc
-
-
+%use this section as the peaks for the particles. For a bright particle, we
+%usually see the peak prominance >1800, sometimes can go a little lower.
+%However, there is a shadow from the wall which could show up if you go too
+%low.
 %% set peak features for rest of analysis
 tic
 prom = 1800;%Change this based on previous graph output
 pdist = 4;
 maxpwidth = 20;
 toc
-
 %%
 % use findpeaks on data
 tic
@@ -124,7 +132,7 @@ for p = frames(1):2:frames(2)
     end
 end
 toc
-
+%This section should actually find the particle from your video/data.
 if sum(sum((all_locs(:,:,1)))) == sum((all_locs(:)))
     disp('detected a maxiimum of 1 particle per region, all good')
 else
