@@ -4,8 +4,8 @@
 % Diego Alba 3/12/2019
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cine_folder = 'C:\Users\Srivathsan Kalyan\OneDrive - Johns Hopkins University\WT Focusing Vids';
-cine_file = 'Re=10_T1 part 2.cine';
+cine_folder = 'Z:\DACS Cell Sorting with Prof. Sangwon Kim\Images From Cell Sorting KO\Alignment videos\2019.07.31';
+cine_file = 'Re=8 vid 1 part2.cine';
 
 
 window_height = 1:64; % vector of pixels at which to read data
@@ -80,7 +80,7 @@ toc
 all_pr = [];
 all_w = [];
 maxpwidth = radius*2;
-for p = frames(1):frames(2)
+for p = frames(1):2:frames(2)
     for k = 1:n_locs
         final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
         final_vals=final_vals';
@@ -115,7 +115,7 @@ toc
 tic
 all_locs = zeros(frames(2),n_locs,5);
 flag = zeros(frames(2),n_locs);
-for p = frames(1):frames(2)
+for p = frames(1):2:frames(2)
     for k = 1:n_locs
         final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
         final_vals=final_vals';
@@ -178,11 +178,3 @@ imagesc(dummy(:,:,1))
 subplot(1,2,2)
 histogram(dist)
 all_locs(particles)
-hold on
-top_wall=mean(wall(:,1));
-bottom_wall=mean(wall(:,2));
-xlim([0;64])
-top=[top_wall,0;top_wall,15];
-bottom=[bottom_wall,0;bottom_wall,15];
-plot(top(:,1),top(:,2))
-plot(bottom(:,1),bottom(:,2))

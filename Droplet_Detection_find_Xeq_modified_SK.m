@@ -4,8 +4,8 @@
 % Diego Alba 3/12/2019
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-cine_folder = 'E:\Yuelin Particle Focusing Videos and Analysis Code\KO Alignment Vids';
-cine_file = 'Re=8 vid 1 part3.cine';
+cine_folder = 'Z:\DACS Cell Sorting with Prof. Sangwon Kim\Images From Cell Sorting KO\Alignment videos\2019.07.31';
+cine_file = 'Re=8 vid 1 part2.cine';
 window_height = 1:64; % vector of pixels at which to read data
 window_length = 1280; % number of pixles 
 window_origin = 0; % offset 
@@ -52,7 +52,7 @@ toc
 %to video, but have seen that using ~1000-1300 is a good starting point
 %% set peak 
 tic
-prom = 1200; %Only Change this in this Section
+prom = 1000; %Only Change this in this Section
 pdist = 4; 
 toc
 %%
@@ -112,7 +112,7 @@ toc
 tic
 prom = 1800;%Change this based on previous graph output
 pdist = 4;
-maxpwidth = 20;
+maxpwidth = 12;
 toc
 %%
 % use findpeaks on data
@@ -124,10 +124,40 @@ for p = frames(1):2:frames(2)
         final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
         final_vals=final_vals';
         final=max(final_vals)';
-        [~,locs,w,pr] = findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+        [~,locs,w,pr,width_indices] = findpeaks_width_output(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extents');
         all_locs(p,k,1:length(locs)) = locs;
         if ~isempty(locs)
             flag(p,k) = 1;
+            indices=round(width_indices);
+            data=final(indices(1)-1:indices(2)+1);
+            xcoords=indices(1)-1:indices(2)+1;
+            data2= data+10000;
+            f = fit(xcoords',data2,'gauss1');
+%             figure
+%             plot(f)
+            higherresxcoords = xcoords(1):.01:xcoords(end);
+            Yhat = feval(f,higherresxcoords);
+            [~,locs2,w] = findpeaks(Yhat);   
+            B=size(locs2);
+            if size(locs2,1) > 1
+                testingpoints=Yhat(locs2);
+%                 L=find(testingpoints==max(testingpoints));
+                L=find(w==max(w));
+                locs2 = find(Yhat==testingpoints(L));
+                clear testingpoints
+            end
+            locs4=higherresxcoords(locs2);
+            figure
+            findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+            hold on
+            Yhat2=Yhat-10000;
+            plot(higherresxcoords,Yhat2)
+            hold on
+            locs3=locs4+xcoords(1);
+            plot(locs4,Yhat2(round(locs2)),'o')
+            locs2= locs2 + xcoords(1)+1;
+            all_locs(p,k,1:length(locs2)) = locs4;
+            title(k)
         end
     end
 end
@@ -141,6 +171,8 @@ if sum(sum((all_locs(:,:,1)))) == sum((all_locs(:)))
 else
     disp('detected more than 1 particle per region, not supported')
 end
+[locsx,locsy,locsz]=(find(all_locs > 0));
+copy=all_locs;
 for k = 1:n_locs
     all_locs(:,k,:) = all_locs(:,k,:)+wall(k,1);
 end
@@ -153,15 +185,21 @@ histogram(all_locs(all_locs>0))
 %comment this part out when you're done trouble shooting, this displays the
 %graph at every instance of detection
 [idx_p,idx_k] = find(flag);
+channelwidth=round(max(wall(:,2)-wall(:,1)));
+all_relevant_val=zeros(length(idx_k),channelwidth);
+widths=zeros(length(idx_k),1);
 for i = 1:length(idx_k)
     p = idx_p(i);
     k = idx_k(i);
-    figure
-    final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
-    final_vals=final_vals';
-    final=max(final_vals)';
-    findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
-    title(i)
+%     figure
+%     final_vals=sample(wall(k,1):wall(k,2),x_locs(k)-radius*2:x_locs(k)+radius*2,p);
+%     final_vals=final_vals';
+%     final=max(final_vals)';
+%     all_relevant_val(i,1:length(final))=final';
+%     findpeaks(final,'MinPeakProminence',prom,'MinPeakDistance',pdist,'MinPeakWidth',minpwidth,'MaxPeakWidth',maxpwidth,'Annotate','extent');
+%     hold on
+%     plot(copy(locsx(i),locsy(i),locsz(i)),final(round(copy(locsx(i),locsy(i),locsz(i)))),'o')
+%     title(i)
 end
 
 delete = input('enter and array of indices to delete (in the form: [1, 17,25]): where the numbers correspond to the detection from the graph on the left');
